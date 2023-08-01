@@ -36,9 +36,27 @@ single_plant_cleaner <- function(directory, workbook, plant){
            address == "B17") |> 
     pull(character)
   
+  start_points <- raw_plant |> 
+    filter(sheet == plant) |> 
+    filter(character == "Unit ID #")
+  
+  gen_row_start <- start_points$row[1] + 1
+  
+  gen_row_end <- raw_plant |> 
+    filter(sheet == plant, 
+           character == "C. UNIT CAPABILITY DATA") |> 
+    mutate(row = row - 2) |> 
+    pull(row)
+
+  row_count <- gen_row_end - gen_row_start
+  
+  cap_row_start <- start_points$row[2] + 1
+  
+  fuel_row_start <- start_points$row[3] + 1
+  
   generating_data <- raw_plant |> 
     filter(sheet == plant, 
-           row %in% c(23:33) & col %in% c(2:8)) |> 
+           row %in% c(gen_row_start:(gen_row_start + row_count)) & col %in% c(2:8)) |> 
     mutate(values = case_when(
       data_type == "character"  ~ character, 
       data_type == "numeric" ~ as.character(numeric)
@@ -57,7 +75,7 @@ single_plant_cleaner <- function(directory, workbook, plant){
   
   capability_data <- raw_plant |> 
     filter(sheet == plant, 
-           row %in% c(37:47) & col %in% c(2:8)) |> 
+           row %in% c(cap_row_start:(cap_row_start + row_count)) & col %in% c(2:8)) |> 
     mutate(values = case_when(
       data_type == "character"  ~ character, 
       data_type == "numeric" ~ as.character(numeric)
@@ -72,11 +90,12 @@ single_plant_cleaner <- function(directory, workbook, plant){
            `Operating Factor (Percent)` = `6`, 
            `Forced Outage Rate (Percent)` = `7`,
            `Capacity Comments` = `8`) |> 
-    filter(complete.cases(`ID`))
+    filter(complete.cases(`ID`)) |> 
+    select(-c(ID))
   
   fuel_data <- raw_plant |> 
     filter(sheet == plant, 
-           row %in% c(51:61) & col %in% c(2:10)) |> 
+           row %in% c(fuel_row_start:(fuel_row_start + row_count)) & col %in% c(2:10)) |> 
     mutate(values = case_when(
       data_type == "character"  ~ character, 
       data_type == "numeric" ~ as.character(numeric)
@@ -93,11 +112,14 @@ single_plant_cleaner <- function(directory, workbook, plant){
            `Secondary Fuel Quantity` = `8`, 
            `Secondary Fuel Unit` = `9`, 
            `Secondary BTU Content` = `10`) |> 
-    filter(complete.cases(`ID`))
+    filter(complete.cases(`ID`)) |> 
+    select(-c(ID))
   
-  plant_data <- generating_data |> 
-    left_join(capability_data, by = "ID") |> 
-    left_join(fuel_data, by = "ID") |> 
+  plant_data <- generating_data |>
+    bind_cols(capability_data) |> 
+    bind_cols(fuel_data) |> 
+    # left_join(capability_data, by = "ID") |> 
+    # left_join(fuel_data, by = "ID") |> 
     mutate(Utility = utility_name, 
            Year = report_year) |> 
     relocate(Utility, .before = "ID") |> 
@@ -160,7 +182,7 @@ all_plants_cleaner <- function(directory, workbook){
       }
       
     }
-    
+
     return(plant)
     
   }
