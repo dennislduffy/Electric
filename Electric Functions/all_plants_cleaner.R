@@ -142,13 +142,17 @@ single_plant_cleaner <- function(directory, workbook, plant){
 
 all_plants_cleaner <- function(directory, workbook){
   
-  pages_toss <- c("Attachments", "BlankPlant", "ElectricityByClass", "ElectricityByCounty", "ElectricityByMonth", "PurchaseSales", 
-                  "Registration", "SpaceHeating", "Substitutions", "EBM-By RevenueClass")
-  
-  #DD Note: one sheet has a EBM-By RevenueClass that isn't in any other sheet. Tossing it.
-  
+  #Only takes Plant## sheets. Excludes the BlankPlant sheet
+  sheet_names <- getSheetNames(paste(directory, workbook, sep = "/"))
+  plant_pages <- c()
+  for(i in sheet_names){
+    if(grepl("Plant",i) == TRUE && grepl("BlankPlant",i) == FALSE){
+      plant_pages <- append(plant_pages, i)
+    }
+  }
+  print(plant_pages)
   raw_plants <- xlsx_cells(paste(directory, workbook, sep = "/")) |>
-    filter(!c(sheet %in% pages_toss))
+    filter(c(sheet %in% plant_pages))
   
 
   plant_sheets <- raw_plants |>
