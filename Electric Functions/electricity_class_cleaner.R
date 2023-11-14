@@ -1,10 +1,3 @@
-#required libraries - used for testing
-
-# library(tidyverse)
-# library(tidyxl)
-
-
-#define electric_class_cleaner function 
 
 electricity_class_cleaner <- function(directory, workbook){
   
@@ -22,6 +15,12 @@ electricity_class_cleaner <- function(directory, workbook){
     filter(sheet == "Registration", 
            row == 9 & col == 3) |> 
     pull(character)
+  
+  
+  utility_id <- raw_utility |> 
+    filter(sheet == "Registration", 
+           address == "C5") |> 
+    pull(content)
   
   elec_class <- raw_utility |> 
     filter(sheet == "ElectricityByClass", 
@@ -41,8 +40,10 @@ electricity_class_cleaner <- function(directory, workbook){
            Year = report_year, 
            `Number of Customers at End of Year` = as.numeric(`Number of Customers at End of Year`), 
            `Megawatt Hours` = as.numeric(`Megawatt Hours`), 
-           `Revenue` = as.numeric(Revenue)) |> 
-    relocate(Utility, .before = `Classification of Energy Delivered to Ultimate Consumers`) |> 
+           `Revenue` = as.numeric(Revenue), 
+           utility_id = utility_id) |> 
+    relocate(Utility, .before = `Classification of Energy Delivered to Ultimate Consumers`) |>
+    relocate(utility_id, .before = `Classification of Energy Delivered to Ultimate Consumers`) |> 
     relocate(Year, .before = `Classification of Energy Delivered to Ultimate Consumers`)
   
   return(elec_class)

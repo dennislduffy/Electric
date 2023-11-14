@@ -1,3 +1,5 @@
+
+###
 elec_county_cleaner <- function(directory, workbook){
   
   raw_utility <- xlsx_cells(
@@ -15,12 +17,21 @@ elec_county_cleaner <- function(directory, workbook){
            row == 9 & col == 3) |> 
     pull(character)
   
+  utility_id <- raw_utility |> 
+    filter(sheet == "Registration", 
+           address == "C5") |> 
+    pull(content)
+  
   county_name <- raw_utility |> 
     filter(sheet == "ElectricityByCounty", 
            row %in% c(12:56) & col == 2 | row %in% c(12:53) & col == 6) |>
     arrange(col, row) |> 
     select(character) |> 
-    rename(`County Name` = "character")
+    rename(`County Name` = "character") |> 
+    mutate(`County Name` = case_when(
+      `County Name` == "Olmstead" ~ "Olmsted", 
+      TRUE ~ `County Name`
+    ))
   
   mwh_delivered <- raw_utility |> 
     filter(sheet == "ElectricityByCounty", 
@@ -38,7 +49,8 @@ elec_county_cleaner <- function(directory, workbook){
     bind_cols(county_name) |> 
     bind_cols(mwh_delivered) |> 
     mutate(`Report Year` = report_year, 
-           Utility = utility_name) |> 
+           Utility = utility_name, 
+           utility_id = utility_id) |> 
     filter(complete.cases(`MWH Delivered`))
   
   return(elec_by_county)

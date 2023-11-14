@@ -16,6 +16,11 @@ single_plant_cleaner <- function(directory, workbook, plant){
            row == 6, col == 3) |> 
     pull(numeric)
   
+  entity_id <- raw_plant |> 
+    filter(sheet == "Registration", 
+           address == "C5") |> 
+    pull(content)
+  
   plant_name <- raw_plant |> 
     filter(sheet == plant, 
            address == "B12") |> 
@@ -90,8 +95,7 @@ single_plant_cleaner <- function(directory, workbook, plant){
            `Operating Factor (Percent)` = `6`, 
            `Forced Outage Rate (Percent)` = `7`,
            `Capacity Comments` = `8`) |> 
-    filter(complete.cases(`ID`)) |> 
-    select(-c(ID))
+    filter(complete.cases(`ID`)) 
   
   fuel_data <- raw_plant |> 
     filter(sheet == plant, 
@@ -112,18 +116,19 @@ single_plant_cleaner <- function(directory, workbook, plant){
            `Secondary Fuel Quantity` = `8`, 
            `Secondary Fuel Unit` = `9`, 
            `Secondary BTU Content` = `10`) |> 
-    filter(complete.cases(`ID`)) |> 
-    select(-c(ID))
+    filter(complete.cases(`ID`)) 
   
   plant_data <- generating_data |>
-    bind_cols(capability_data) |> 
-    bind_cols(fuel_data) |> 
-    # left_join(capability_data, by = "ID") |> 
-    # left_join(fuel_data, by = "ID") |> 
+    # bind_cols(capability_data) |> 
+    # bind_cols(fuel_data) |> 
+    left_join(capability_data, by = "ID") |>
+    left_join(fuel_data, by = "ID") |>
     mutate(Utility = utility_name, 
-           Year = report_year) |> 
+           Year = report_year, 
+           `Entity ID` = entity_id) |> 
     relocate(Utility, .before = "ID") |> 
     relocate(Year, .before = "ID") |> 
+    relocate(`Entity ID`, .before = "ID")
     mutate(`Year Installed` = as.numeric(`Year Installed`), 
            `Net Generation MWH` = as.numeric(`Net Generation MWH`), 
            `Summer Capacity MW` = as.numeric(`Summer Capacity MW`), 

@@ -15,6 +15,11 @@ elec_month_cleaner <- function(directory, workbook){
            row == 9 & col == 3) |> 
     pull(character)
   
+  utility_id <- raw_utility |> 
+    filter(sheet == "Registration", 
+           address == "C5") |> 
+    pull(content)
+  
   month_table <- raw_utility |> 
     filter(sheet == "ElectricityByMonth", 
            row %% 2 == 0 & row %in% c(10:32) & col == 1) |> 
@@ -60,8 +65,10 @@ elec_month_cleaner <- function(directory, workbook){
     left_join(mwh_numbers, by = c("row" = "row", "customer_type" = "customer_type")) |> 
     select(-c(row)) |> 
     mutate(Utility = utility_name, 
-           `Report Year` = report_year) |> 
+           `Report Year` = report_year, 
+           utility_id = utility_id) |> 
     relocate(Utility, .before = "customer_type") |> 
+    relocate(utility_id, .before = "customer_type") |> 
     relocate(`Report Year`, .before = "customer_type") |> 
     rename(`Customer Type` = "customer_type", 
            `Customer Count` = "customer_count")

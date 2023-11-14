@@ -16,6 +16,11 @@ elec_purchase_sales_cleaner <- function(directory, workbook){
            row == 9 & col == 3) |> 
     pull(character)
   
+  utility_id <- raw_utility |> 
+    filter(sheet == "Registration", 
+           address == "C5") |> 
+    pull(content)
+  
   purchase_sales <- raw_utility |> 
     filter(sheet == "PurchaseSales", 
            row >= 13 & col %in% 1:4) |> 
@@ -35,8 +40,10 @@ elec_purchase_sales_cleaner <- function(directory, workbook){
     mutate(`MWH Purchased` = as.numeric(`MWH Purchased`), 
            `MWH Sold for Resale` = as.numeric(`MWH Sold for Resale`)) |> 
     mutate(`Report Year` = report_year, 
-           Utility = utility_name) |> 
-    relocate(Utility, .before = `Transaction Utility`) |> 
+           Utility = utility_name, 
+           utility_id = utility_id) |> 
+    relocate(Utility, .before = `Transaction Utility`) |>
+    relocate(utility_id, .before = `Transaction Utility`) |> 
     relocate(`Report Year`, .before = `Transaction Utility`)
   
   return(purchase_sales)
