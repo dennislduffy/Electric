@@ -22,9 +22,19 @@ elec_county_cleaner <- function(directory, workbook){
            address == "C5") |> 
     pull(content)
   
+  table_position <- raw_utility |> 
+    filter(sheet == "ElectricityByCounty",
+           col == 1,
+           data_type == "character") |> 
+    filter(character %in% c("COUNTY", "CODE")) |> 
+    filter(row == max(row)) |> 
+    mutate(start_position = row + 2) |> 
+    pull(start_position)
+    
+  
   county_name <- raw_utility |> 
     filter(sheet == "ElectricityByCounty", 
-           row %in% c(12:56) & col == 2 | row %in% c(12:53) & col == 6) |>
+           row %in% c(table_position:(table_position + 44)) & col == 2 | row %in% c(table_position:(table_position + 41)) & col == 6) |>
     arrange(col, row) |> 
     select(character) |> 
     rename(`County Name` = "character") |> 
@@ -35,14 +45,14 @@ elec_county_cleaner <- function(directory, workbook){
   
   mwh_delivered <- raw_utility |> 
     filter(sheet == "ElectricityByCounty", 
-           row %in% c(12:56) & col == 3 | row %in% c(12:53) & col == 7) |>
+           row %in% c(table_position:(table_position + 44)) & col == 3 | row %in% c(table_position:(table_position + 41)) & col == 7) |>
     arrange(col, row) |> 
     select(numeric) |> 
     rename(`MWH Delivered` = "numeric")
   
   elec_by_county <- raw_utility |> 
     filter(sheet == "ElectricityByCounty",
-           row %in% c(12:56) & col == 1 | row %in% c(12:53) & col == 5) |> 
+           row %in% c(table_position:(table_position + 44)) & col == 1 | row %in% c(table_position:(table_position + 41)) & col == 5) |> 
     arrange(col, row) |> 
     select(numeric) |> 
     rename(`County Code` = numeric) |> 
